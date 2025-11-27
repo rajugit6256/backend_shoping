@@ -5,18 +5,19 @@ const app= express();
 
 const port = process.env.PORT ;
 
-app.get('/', (req, res) => {
-  res.send('This is raju kumar');
-});
 
-app.get('/login', (req, res) => {
-  res.send('<h1>this is login page</h1>');
-});
-app.get('/signup', (req, res) => {
-  res.send('<h1>this is login page</h1>');
-});
-
+const userRoutes = require('./routes/authRoutes');
+ 
+app.use(bodyParser.json());
+app.use('/api/v1', userRoutes);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
+});
+
+// Database connection (do NOT call mongoose like a function!)
+require('./config/database'); 
+
+app.get('/', (req, res) => {
+  res.send('This is raju kumar');
 });
