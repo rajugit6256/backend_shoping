@@ -1,12 +1,24 @@
 const express = require('express');
 const bodyParser = require('body-parser');  
 require('dotenv').config()
+const cors = require('cors');
 const app= express();
 
 const port = process.env.PORT ;
 
 
 const userRoutes = require('./routes/authRoutes');
+// ⭐ Correct CORS Setup
+app.use(cors({
+  origin: [
+    "http://localhost:3000",                 // local frontend
+    // process.env.FRONTEND_URL                 // production frontend
+  ],
+  credentials: true,                         // allow cookies
+}));
+
+// ⭐ Cookie parser (you forgot this — REQUIRED for cookies)
+app.use(cookieParser());
  
 app.use(bodyParser.json());
 app.use('/api/v1', userRoutes);
