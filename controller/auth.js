@@ -7,10 +7,10 @@ const { sendEmail, otpEmailTemplate } = require("../services/emailService");
 
 const createUser = async (req, res) => {
   try {
-    const { email, phone, password, role } = req.body;
+    const {name, email, phone, password, role } = req.body;
 
     // 1️⃣ Validate inputs
-    if (!email || !password || !phone) {
+    if (!name || ! email || !password || !phone) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -57,6 +57,7 @@ const createUser = async (req, res) => {
 
     // 7️⃣ Save user
     const user = await PendingUser.create({
+      name,
       email,
       phone,
       password: hashedPassword,
@@ -70,6 +71,7 @@ const createUser = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User registered. OTP sent to email.",
+      otp: otp, // for testing only, remove in production
       userId: user._id, // send only safe data
     });
 

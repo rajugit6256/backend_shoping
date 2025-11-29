@@ -40,7 +40,7 @@ const verifyOtp = async (req, res) => {
       const newUser = await User.create(
         [
           {
-            fullName: pendingUser.fullName,
+            name: pendingUser.name,
             email: pendingUser.email,
             phone: pendingUser.phone,
             password: pendingUser.password, // already hashed
