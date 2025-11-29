@@ -1,25 +1,33 @@
-const nodemailer = require("nodemailer");
+const Brevo = require('@getbrevo/brevo');
 const otpEmailTemplate = require("../templates/otpEmail");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const apiInstance = new Brevo.TransactionalEmailsApi();
+
+apiInstance.setApiKey(
+  Brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
+
+const SENDER_EMAIL = process.env.EMAIL_USER; // your verified email
 
 const sendEmail = async (to, subject, html) => {
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to,
-      subject,
-      html,
-    });
-    console.log(`Email sent to ${to}`);
+    const emailObj = new Brevo.SendSmtpEmail();
+
+    emailObj.sender = { 
+      name: "Your App", 
+      email: SENDER_EMAIL 
+    };
+    
+    emailObj.to = [{ email: to }];
+    emailObj.subject = subject;
+    emailObj.htmlContent = html;
+
+    const response = await apiInstance.sendTransacEmail(emailObj);
+
+    console.log("Email sent to:", to, response);
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Brevo Email Error:", error);
     throw new Error("Email could not be sent");
   }
 };
