@@ -5,13 +5,18 @@ const loginUser = require('../controller/loginUser');
 const createUser = require('../controller/auth');
 const verifyOtp = require('../controller/verifyOtp');
 const reSendOtp = require('../controller/reSendOtp');
-// const profile = require('../controller/profile');
+const navbar = require('../controller/navbar');
+const logout= require('../controller/logout');
+const refreshAccessToken = require('../controller/refreshToken');
 
 
 router.post("/login", loginUser);
 router.post("/signup", createUser);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", reSendOtp);
+router.get("/navbar", navbar);
+router.post("/logout", logout);
+router.post("/refresh-token", refreshAccessToken);
 // router.get("/profile", profile);
 
 module.exports = router;        
