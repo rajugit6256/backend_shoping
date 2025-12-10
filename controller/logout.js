@@ -9,13 +9,13 @@ const logout = async (req, res) => {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: false, // change to true in production with HTTPS
-      sameSite: "lax",
+      sameSite: "none",
       path: "/",
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: false,
-      sameSite: "lax",
+      sameSite: "none",
       path: "/",
     });
 

@@ -19,12 +19,7 @@ app.use(cors({
 }));
 
 
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log("Headers:", req.headers);
-  console.log("Cookies:", req.cookies);
-  next();
-});
+
 
 // ⭐ Cookie parser (you forgot this — REQUIRED for cookies)
 app.use(cookieParser());
