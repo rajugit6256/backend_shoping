@@ -5,40 +5,39 @@ const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
-    // No refresh token
-    if (!refreshToken) {
-      return res.status(200).json({
-        success: true,
-        token: "Token not found",
-        message: "Logged out",
-      });
-    }
-
-    // Decode refresh token
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-
-    // Find user
-    const user = await User.findById(decoded.id);
-
-    if (user) {
-      user.refreshToken = null; // Remove from DB
-      await user.save();
-    }
-
-    // Clear cookies
+    // Clear cookies in any case
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: false,
-      sameSite: "none",
+      secure: false, // change to true in production with HTTPS
+      sameSite: "lax",
       path: "/",
     });
-
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
       path: "/",
     });
+
+    // If no refresh token, return success
+    if (!refreshToken) {
+      return res.status(200).json({ success: true, message: "Logged out without refreshtoken" });
+    }
+
+    // Verify refresh token
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch {
+      return res.status(200).json({ success: true, message: "Logged out" });
+    }
+
+    // Remove refreshToken from DB
+    const user = await User.findById(decoded.id);
+    if (user) {
+      user.refreshToken = null;
+      await user.save();
+    }
 
     return res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
