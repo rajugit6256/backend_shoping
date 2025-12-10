@@ -8,13 +8,13 @@ const logout = async (req, res) => {
     // Clear cookies in any case
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: true, // change to true in production with HTTPS
+      secure: false, // change to true in production with HTTPS
       sameSite: "none",
       path: "/",
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: true,
+      secure: false,
       sameSite: "none",
       path: "/",
     });
