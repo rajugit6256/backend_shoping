@@ -10,27 +10,27 @@ const port = process.env.PORT ;
 
 const userRoutes = require('./routes/authRoutes');
 // ⭐ Correct CORS Setup
-// app.use(cors({
-//   origin: [
-//     "http://localhost:3000",                 // local frontend
-//     // process.env.FRONTEND_URL                 // production frontend
-//   ],
-//   credentials: true,                         // allow cookies
-// }));
-
 app.use(cors({
-  origin: "http://localhost:3000",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: [
+    "http://localhost:3000",                 // local frontend
+    // process.env.FRONTEND_URL                 // production frontend
+  ],
+  credentials: true,                         // allow cookies
 }));
 
-// ⭐ FIX: These headers MUST be here for cookies to work cross-site
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  next();
-});
+// app.use(cors({
+//   origin: "http://localhost:3000",
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+// }));
+
+// // ⭐ FIX: These headers MUST be here for cookies to work cross-site
+// app.use((req, res, next) => {
+//   res.header("Access-Control-Allow-Credentials", "true");
+//   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+//   res.header("Access-Control-Allow-Headers", "Content-Type");
+//   next();
+// });
 
 
 
