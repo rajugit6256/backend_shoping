@@ -9,7 +9,7 @@ const navbar = require('../controller/navbar');
 const logout= require('../controller/logout');
 const refreshAccessToken = require('../controller/refreshToken');
 const getProfile = require('../controller/profile/profile');
-const authMiddleware = require('../middleware/authentication');
+const authMiddleware = require('../Middleware/authentication');
 
 
 router.post("/login", loginUser);
