@@ -18,19 +18,7 @@ app.use(cors({
   credentials: true,                         // allow cookies
 }));
 
-// app.use(cors({
-//   origin: "http://localhost:3000",
-//   credentials: true,
-//   methods: ["GET", "POST", "PUT", "DELETE"],
-// }));
 
-// // ⭐ FIX: These headers MUST be here for cookies to work cross-site
-// app.use((req, res, next) => {
-//   res.header("Access-Control-Allow-Credentials", "true");
-//   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-//   res.header("Access-Control-Allow-Headers", "Content-Type");
-//   next();
-// });
 
 
 

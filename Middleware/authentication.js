@@ -1,22 +1,31 @@
-const jwt = require('jsonwebtoken');
-const SECRET_KEY = process.env.SECRET_KEY || 'default_secret';
+// middleware/auth.js
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-function authenticate(req, res, next) {
-  // Get token from cookies
-  const token = req.cookies?.token;
-
-  if (!token) {
-    return res.status(401).json({ message: 'No token, access denied' });
-  }
-
+const authentication = async (req, res, next) => {
   try {
-    // Verify and decode token
-    const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded; // attach user payload to request
+    const accessToken = req.cookies.accessToken;
+
+    if (!accessToken) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const decoded = jwt.verify(
+      accessToken,
+      process.env.ACCESS_TOKEN_SECRET
+    );
+
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
-}
+};
 
-module.exports = authenticate;
+module.exports = authentication;
