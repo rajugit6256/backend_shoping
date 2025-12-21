@@ -4,15 +4,22 @@ const User = require("../models/User");
 const refreshAccessToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-
     if (!refreshToken) {
-      return res.status(401).json({ success: false });
+      return res.status(401).json(
+        {
+         success: false
+        , message:" No refresh token provided"
+       }
+      );
     }
 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const user = await User.findById(decoded.id).select("-password");
     if (!user || user.refreshToken !== refreshToken) {
-      return res.status(401).json({ success: false });
+      return res.status(401).json({
+         success: false,
+         message:" Invalid refresh token"
+        });
     }
     // ✅ GENERATE NEW ACCESS TOKEN
     const accessToken = jwt.sign(
