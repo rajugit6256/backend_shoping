@@ -3,43 +3,37 @@ const User = require("../models/User");
 
 const issueAccessTokenFromRefresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.log(refreshToken,"this is refresh token")
+  console.log(refreshToken, "this is refresh token");
 
-    if (!refreshToken) {
-      return res.status(401).json(
-        {
-         success: false
-        , message:" No refresh token provided"
-       }
-      );
-    }
+  // ❌ DO NOT send response
+  if (!refreshToken) {
+    throw new Error("NO_REFRESH_TOKEN");
+  }
 
-  // Verify refresh token
-  const decoded = jwt.verify(
-    refreshToken,
-    process.env.REFRESH_TOKEN_SECRET
-  );
+  let decoded;
+  try {
+    decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch {
+    throw new Error("INVALID_REFRESH_TOKEN");
+  }
 
-  // Find user & validate stored refresh token
   const user = await User.findById(decoded.id).select("-password");
 
   if (!user || user.refreshToken !== refreshToken) {
-    return res.status(401).json(
-      {
-       success: false
-      , message:" Invalid refresh token"
-     }
-    );
+    throw new Error("INVALID_REFRESH_TOKEN");
   }
 
-  // Generate new access token
+  // ✅ Generate new access token
   const accessToken = jwt.sign(
     { id: user._id, role: user.role },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   );
 
-  // Set cookie
+  // ✅ Setting cookies is OK
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
@@ -47,6 +41,7 @@ const issueAccessTokenFromRefresh = async (req, res) => {
     maxAge: 15 * 60 * 1000,
   });
 
+  // ✅ ONLY return data
   return user;
 };
 
