@@ -10,6 +10,7 @@ const logout= require('../controller/logout');
 const refreshAccessToken = require('../controller/refreshToken');
 const getProfile = require('../controller/profile/profile');
 const authMiddleware = require('../Middleware/authentication');
+const me = require('../controller/me');
 
 
 router.post("/login", loginUser);
@@ -19,6 +20,7 @@ router.post("/resend-otp", reSendOtp);
 router.get("/navbar", navbar);
 router.post("/logout", logout);
 router.post("/refresh-token", refreshAccessToken);
+router.get("/me", me);
 router.get("/profile", authMiddleware, getProfile);
 // router.get("/profile", profile);
 
