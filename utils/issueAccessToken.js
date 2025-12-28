@@ -24,7 +24,12 @@ const issueAccessTokenFromRefresh = async (req, res) => {
   const user = await User.findById(decoded.id).select("-password");
 
   if (!user || user.refreshToken !== refreshToken) {
-    throw new Error("INVALID_REFRESH_TOKEN");
+    return res.status(401).json(
+      {
+       success: false
+      , message:" Invalid refresh token"
+     }
+    );
   }
 
   // Generate new access token

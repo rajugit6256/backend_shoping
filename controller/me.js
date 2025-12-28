@@ -3,14 +3,11 @@ const jwt = require("jsonwebtoken");
 
 const me = async (req, res) => {
   const accessToken = req.cookies.accessToken;
-console.log(accessToken,"this is me api")
+  console.log(accessToken, "this is me api");
   // 1️⃣ If access token exists → try it
   if (accessToken) {
     try {
-     const decoded = jwt.verify(
-         accessToken,
-         process.env.ACCESS_TOKEN_SECRET
-       );
+      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
       return res.json({ id: decoded.id, role: decoded.role });
     } catch {
       // expired → continue
@@ -20,6 +17,7 @@ console.log(accessToken,"this is me api")
   // 2️⃣ Access token missing or expired → use refresh token
   try {
     const user = await issueAccessTokenFromRefresh(req, res);
+    console.log(user, "user");
     return res.json({ id: user._id, role: user.role });
   } catch {
     // 3️⃣ Refresh token also invalid
