@@ -1,40 +1,58 @@
-const express = require('express');
-const bodyParser = require('body-parser');  
-require('dotenv').config()
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const app= express();
+require("dotenv").config();
 
-const port = process.env.PORT ;
+const connectDB = require("./config/database");
+const userRoutes = require("./routes/authRoutes");
 
+const app = express();
+const port = process.env.PORT || 5000;
 
-const userRoutes = require('./routes/authRoutes');
-// ⭐ Correct CORS Setup
-app.use(cors({
-  origin: [
-    "http://localhost:3000",                 // local frontend
-    process.env.FRONTEND_URL                 // production frontend
-  ],
-  credentials: true,                         // allow cookies
-}));
+// Guard: ensure critical env vars exist on startup
+if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+  console.error("FATAL: JWT secrets are missing from environment variables");
+  process.exit(1);
+}
 
-
-
-
-
-// ⭐ Cookie parser (you forgot this — REQUIRED for cookies)
+// Middleware
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      process.env.FRONTEND_URL,
+      process.env.STAGING_FRONTEND_URL,
+    ].filter(Boolean),
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
- 
-app.use(bodyParser.json());
-app.use('/api/v1', userRoutes);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+// Routes
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
+app.use("/api/v1", userRoutes);
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// Database connection (do NOT call mongoose like a function!)
-require('./config/database'); 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
 
-app.get('/', (req, res) => {
-  res.send('This is raju kumar');
+// Start server only after DB connects
+connectDB().then(() => {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
 });

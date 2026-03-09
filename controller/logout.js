@@ -1,48 +1,47 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const cookieClearOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+  path: '/',
+};
 
 const logout = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
-    // Clear cookies in any case
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: true, // change to true in production with HTTPS
-      sameSite: "none",
-      path: "/",
-    });
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-    });
+    // Always clear cookies regardless of token state
+    res.clearCookie('accessToken', cookieClearOptions);
+    res.clearCookie('refreshToken', cookieClearOptions);
 
-    // If no refresh token, return success
     if (!refreshToken) {
-      return res.status(200).json({ success: true, message: "Logged out without refreshtoken" });
+      return res.status(200).json({ success: true, message: 'Logged out' });
     }
 
-    // Verify refresh token
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     } catch {
-      return res.status(200).json({ success: true, message: "Logged out" });
+      // Token invalid/expired — cookies already cleared, still success
+      return res.status(200).json({ success: true, message: 'Logged out' });
     }
 
-    // Remove refreshToken from DB
+    // Remove refresh token from DB
     const user = await User.findById(decoded.id);
     if (user) {
       user.refreshToken = null;
       await user.save();
     }
 
-    return res.json({ success: true, message: "Logged out successfully" });
+    return res.status(200).json({ success: true, message: 'Logged out successfully' });
+
   } catch (error) {
-    console.error("Logout error:", error);
-    return res.status(500).json({ error: "Server error" });
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
 

@@ -1,47 +1,67 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const User = require('../models/User');
+const { generateTokens } = require('./generateTokens');
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 const issueAccessTokenFromRefresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.log(refreshToken, "this is refresh token");
 
-  // ❌ DO NOT send response
   if (!refreshToken) {
-    throw new Error("NO_REFRESH_TOKEN");
+    throw new Error('NO_REFRESH_TOKEN');
   }
 
   let decoded;
   try {
-    decoded = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
   } catch {
-    throw new Error("INVALID_REFRESH_TOKEN");
+    throw new Error('INVALID_REFRESH_TOKEN');
   }
 
-  const user = await User.findById(decoded.id).select("-password");
-
-  if (!user || user.refreshToken !== refreshToken) {
-    throw new Error("INVALID_REFRESH_TOKEN");
+  const user = await User.findById(decoded.id).select('-password');
+  if (!user) {
+    throw new Error('INVALID_REFRESH_TOKEN');
   }
 
-  // ✅ Generate new access token
-  const accessToken = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
-  );
+  // ✅ Compare hashed refresh token stored in DB
+  const hashedIncoming = crypto
+    .createHash('sha256')
+    .update(refreshToken)
+    .digest('hex');
 
-  // ✅ Setting cookies is OK
-  res.cookie("accessToken", accessToken, {
+  if (user.refreshToken !== hashedIncoming) {
+    throw new Error('INVALID_REFRESH_TOKEN');
+  }
+
+  // ✅ Rotate tokens — generate brand new pair
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+    generateTokens(user._id, user.role);
+
+  // ✅ Hash new refresh token before saving
+  user.refreshToken = crypto
+    .createHash('sha256')
+    .update(newRefreshToken)
+    .digest('hex');
+  await user.save();
+
+  // ✅ Set new cookies
+  const cookieOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  };
+
+  res.cookie('accessToken', newAccessToken, {
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000,
   });
 
-  // ✅ ONLY return data
+  res.cookie('refreshToken', newRefreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
   return user;
 };
 
