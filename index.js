@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const connectDB = require("./config/database");
 const userRoutes = require("./routes/authRoutes");
+const classRoutes = require("./routes/classRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -14,7 +15,10 @@ if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
   console.error("FATAL: JWT secrets are missing from environment variables");
   process.exit(1);
 }
-
+app.use((req, res, next) => {
+  console.log(`📌 ${req.method} ${req.url}`);
+  next();
+});
 // Middleware
 app.use(
   cors({
@@ -35,6 +39,7 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 app.use("/api/v1", userRoutes);
+app.use("/api/v1", classRoutes);
 
 // 404 Handler
 app.use((req, res) => {

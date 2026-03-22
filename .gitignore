@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 package/
+uploads/
 
 # Ignore environment files
 .env
