@@ -65,7 +65,7 @@ const verifyOtp = async (req, res) => {
 
       await session.commitTransaction();
       session.endSession();
-      sendDiscordNotification(
+      sendDiscordNotification( 
         {
           name: pendingUser.name,
           email: pendingUser.email,
