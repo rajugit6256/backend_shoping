@@ -1,29 +1,36 @@
-const bcrypt = require('bcrypt');
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const PendingUser = require('../models/PendingUser');
+const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const PendingUser = require("../models/PendingUser");
+const { sendDiscordNotification } = require("../services/discordService");
 
 const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP are required' });
+      return res.status(400).json({ error: "Email and OTP are required" });
     }
 
     const pendingUser = await PendingUser.findOne({ email });
     if (!pendingUser) {
-      return res.status(400).json({ error: 'No pending registration found for this email' });
+      return res
+        .status(400)
+        .json({ error: "No pending registration found for this email" });
     }
 
     // 1️⃣ OTP expiry check
     if (pendingUser.emailOtpExpiry < Date.now()) {
-      return res.status(400).json({ error: 'OTP expired. Please request a new one.' });
+      return res
+        .status(400)
+        .json({ error: "OTP expired. Please request a new one." });
     }
 
     // 2️⃣ Brute-force protection
     if (pendingUser.otpAttempts >= 5) {
-      return res.status(429).json({ error: 'Too many attempts. Please request a new OTP.' });
+      return res
+        .status(429)
+        .json({ error: "Too many attempts. Please request a new OTP." });
     }
 
     // 3️⃣ Compare OTP
@@ -32,7 +39,7 @@ const verifyOtp = async (req, res) => {
       // Increment attempts on wrong OTP
       pendingUser.otpAttempts += 1;
       await pendingUser.save();
-      return res.status(400).json({ error: 'Invalid OTP' });
+      return res.status(400).json({ error: "Invalid OTP" });
     }
 
     // 4️⃣ Transaction: create verified user + delete pending
@@ -51,35 +58,45 @@ const verifyOtp = async (req, res) => {
             isVerified: true,
           },
         ],
-        { session }
+        { session },
       );
 
       await PendingUser.deleteOne({ email }, { session });
 
       await session.commitTransaction();
       session.endSession();
-
+      sendDiscordNotification(
+        {
+          name: pendingUser.name,
+          email: pendingUser.email,
+          phone: pendingUser.phone,
+          role: pendingUser.role,
+        },
+        (type = "new_registration"),
+      ).catch((err) => {
+        console.error("Discord failed:", err.message);
+      });
       // ✅ Return only safe fields
       return res.status(200).json({
         success: true,
-        message: 'Email verified successfully',
+        message: "Email verified successfully",
         user: {
           id: newUser[0]._id,
           email: newUser[0].email,
           role: newUser[0].role,
         },
       });
-
     } catch (err) {
       await session.abortTransaction();
       session.endSession();
-      console.error('Transaction Error:', err);
-      return res.status(500).json({ error: 'Internal error during verification' });
+      console.error("Transaction Error:", err);
+      return res
+        .status(500)
+        .json({ error: "Internal error during verification" });
     }
-
   } catch (err) {
-    console.error('OTP Verification Error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("OTP Verification Error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
