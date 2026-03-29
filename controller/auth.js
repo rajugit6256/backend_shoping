@@ -42,10 +42,10 @@ const createUser = async (req, res) => {
     }
 
     // 3️⃣ Check phone uniqueness
-    const existingPhone = await User.findOne({ phone });
-    if (existingPhone) {
-      return res.status(400).json({ error: 'Phone number already exists' });
-    }
+    // const existingPhone = await User.findOne({ phone });
+    // if (existingPhone) {
+    //   return res.status(400).json({ error: 'Phone number already exists' });
+    // }
 
     // 4️⃣ Remove any old pending entry for same email
     await PendingUser.deleteOne({ email });
@@ -83,6 +83,7 @@ const createUser = async (req, res) => {
       success: true,
       message: 'User registered. OTP sent to email.',
       userId: user._id,
+      otp: otp, // ✅ For testing only — remove in production
     });
 
   } catch (error) {
