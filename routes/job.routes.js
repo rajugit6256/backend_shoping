@@ -20,6 +20,6 @@ router.delete("/jobs/:id", authMiddleware, isAdminAuth, deleteJob);
 router.patch("/jobs/:id/status", authMiddleware, isAdminAuth, updateStatus);
 
 //both user and admin can access
-router.get("/jobs", authMiddleware, allJobCtrl);
+router.get("/jobs", allJobCtrl);
 
 module.exports = router;
