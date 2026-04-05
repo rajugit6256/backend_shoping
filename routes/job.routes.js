@@ -3,7 +3,7 @@
 const express = require("express");
 const router = express.Router();
 
-const ctrl = require("../controller/job/job.controller");
+const ctrl = require("../controller/Job/job.controller");
 const allJobCtrl = require("../controller/Job/AllJon");
 const updateJobCtrl = require("../controller/Job/updateJob");
 const isAdminAuth = require("../Middleware/isAdminAuth");
