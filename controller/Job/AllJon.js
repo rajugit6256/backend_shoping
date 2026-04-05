@@ -12,33 +12,52 @@ const getAllJobs = async (req, res) => {
       limit = 10,
     } = req.query;
 
-    const query = {};
+    const baseQuery = {};
+    if (status) baseQuery.status = status;
 
-    if (status) query.status = status;
-    if (search) query.$text = { $search: search };
-    if (location) query.location = { $regex: location, $options: "i" };
-    if (category) query.category = category;
-    if (jobType) query.jobType = jobType;
+    const filterQuery = { ...baseQuery };
 
-    const skip = (Number(page) - 1) * Number(limit);
+    if (search) filterQuery.$text = { $search: search };
+    if (location) filterQuery.location = { $regex: location, $options: "i" };
+    if (category) filterQuery.category = category;
+    if (jobType) filterQuery.jobType = jobType;
 
-    // 🔹 Fetch jobs
-    const jobs = await Job.find(query)
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // 🔹 1. Try with filters
+    let jobs = await Job.find(filterQuery)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit))
+      .limit(limitNum)
       .populate("createdBy", "companyName");
 
-    const totalJobs = await Job.countDocuments(query);
+    let usedFallback = false;
 
-    // 🔹 Transform jobs
+    // 🔥 2. If no jobs → fallback to all jobs
+    if (!jobs.length) {
+      usedFallback = true;
+
+      jobs = await Job.find(baseQuery)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .populate("createdBy", "companyName");
+    }
+
+    const totalJobs = await Job.countDocuments(
+      jobs.length && !usedFallback ? filterQuery : baseQuery,
+    );
+
+    // 🔹 Transform response
     const formattedJobs = jobs.map((job) => ({
       id: job._id,
       title: job.title,
       location: job.location,
       jobType: job.jobType,
-      requirements: job.requirements,
-      skills: job.skills,
+      requirements: job.requirements || [],
+      skills: job.skills || [],
       isRemote: job.isRemote,
       companyName: job.createdBy?.companyName || "N/A",
       salary: {
@@ -48,9 +67,11 @@ const getAllJobs = async (req, res) => {
       },
     }));
 
-    // 🔥 Category-wise count
+    // 🔹 Category count (based on baseQuery or filterQuery)
     const categoryCounts = await Job.aggregate([
-      { $match: { status: "active" } }, // you can also use query if needed
+      {
+        $match: usedFallback ? baseQuery : filterQuery,
+      },
       {
         $group: {
           _id: "$category",
@@ -69,14 +90,15 @@ const getAllJobs = async (req, res) => {
     // ✅ Final response
     res.json({
       success: true,
+      fallbackUsed: usedFallback, // 👈 optional (good for frontend UX)
       totalJobs,
-      currentPage: Number(page),
-      totalPages: Math.ceil(totalJobs / limit),
+      currentPage: pageNum,
+      totalPages: Math.ceil(totalJobs / limitNum),
       jobs: formattedJobs,
-      categoryCounts, // 👈 added here
+      categoryCounts,
     });
   } catch (err) {
-    console.error(err);
+    // console.error("ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
