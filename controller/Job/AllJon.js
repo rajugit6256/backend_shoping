@@ -9,15 +9,13 @@ const getAllJobs = async (req, res) => {
       jobType,
       status = "active",
     } = req.query;
-    const query = { status };
-
+    const query = {};
+    if (status) query.status = status;
     if (search) query.$text = { $search: search };
-    if (location) query.location = location;
+    if (location) query.location = { $regex: location, $options: "i" };
     if (category) query.category = category;
     if (jobType) query.jobType = jobType;
-
     const jobs = await Job.find(query).sort({ createdAt: -1 });
-    console.log(jobs,query,"query");
     res.json({ success: true, jobs });
   } catch (err) {
     res.status(500).json({ message: err.message });
